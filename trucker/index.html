@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LoadX Africa — Carrier Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet" />
+  <script
+    src="https://www.paypal.com/sdk/js?client-id=BAAVFWMGmGMsyUcPYKAgxh0C_Fy203IfgBw_MjRCU0-6Rjf_YGwa3ytLpnRFh9tXXaVKAXBLxTDFh0A2NU&components=hosted-buttons&disable-funding=venmo&currency=USD">
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --rust: #C84B1F; --amber: #E87C2A; --sand: #F5E6C8;
+      --earth: #2C1A0E; --dark: #1A0F06; --mid: #4A2F1A;
+      --muted: #8A6A50; --light: #FAF5EE; --green: #2D6A4F;
+      --border: rgba(200,75,31,0.15); --error: #D9534F;
+      --sidebar: 240px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: #F2EBE0; color: var(--earth); }
+    .app { display: flex; min-height: 100vh; }
+
+    /* SIDEBAR — same as shipper */
+    .sidebar {
+      width: var(--sidebar); background: var(--dark);
+      display: flex; flex-direction: column;
+      position: fixed; left: 0; top: 0; bottom: 0;
+      z-index: 50; transition: transform .3s;
+    }
+    .sidebar-logo {
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(200,75,31,0.12);
+      display: flex; align-items: center; gap: 10px; text-decoration: none;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    }
+    .logo-text strong { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; color: var(--sand); display: block; }
+    .logo-text span { font-size: 0.58rem; color: var(--amber); letter-spacing: .1em; text-transform: uppercase; }
+    .nav-section { padding: 1.5rem 0.75rem; flex: 1; overflow-y: auto; }
+    .nav-label { font-size: 0.62rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(245,230,200,0.3); padding: 0 0.75rem; margin-bottom: 0.5rem; }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.65rem 0.75rem; border-radius: 8px;
+      color: rgba(245,230,200,0.55); font-size: 0.85rem;
+      cursor: pointer; transition: background .2s, color .2s;
+      text-decoration: none; margin-bottom: 2px;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: rgba(200,75,31,0.1); color: var(--sand); }
+    .nav-item.active { background: rgba(200,75,31,0.18); color: var(--sand); }
+    .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 1rem 0.75rem; border-top: 1px solid rgba(200,75,31,0.12); }
+    .user-info { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; margin-bottom: 0.5rem; }
+    .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--rust), var(--amber)); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; font-weight: 700; flex-shrink: 0; }
+    .user-name { font-size: 0.8rem; color: var(--sand); font-weight: 500; line-height: 1.2; }
+    .user-role { font-size: 0.68rem; color: rgba(245,230,200,0.4); }
+    .logout-btn { display: flex; align-items: center; gap: 0.5rem; color: rgba(245,230,200,0.4); font-size: 0.8rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 8px; transition: color .2s; background: none; border: none; width: 100%; }
+    .logout-btn:hover { color: var(--error); }
+
+    /* MAIN */
+    .main { margin-left: var(--sidebar); flex: 1; display: flex; flex-direction: column; }
+    .topbar {
+      background: var(--light); border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 40;
+    }
+    .topbar-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--earth); }
+    .hamburger-btn { display: none; background: none; border: none; cursor: pointer; }
+    .sub-badge {
+      padding: 0.3rem 0.85rem; border-radius: 100px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .sub-active { background: rgba(45,106,79,0.12); color: var(--green); }
+    .sub-trial { background: rgba(232,124,42,0.12); color: var(--amber); }
+    .sub-expired { background: rgba(217,83,79,0.12); color: var(--error); }
+
+    .content { padding: 2rem; flex: 1; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── SUBSCRIPTION GATE ── */
+    .sub-gate {
+      background: linear-gradient(135deg, var(--dark), #2C1A0E);
+      border-radius: 20px; padding: 3rem; text-align: center;
+      margin-bottom: 2rem; position: relative; overflow: hidden;
+    }
+    .sub-gate::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Ccircle cx='30' cy='30' r='25' stroke='rgba(200,75,31,0.08)' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E") repeat;
+      pointer-events: none;
+    }
+    .sub-gate h3 {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem;
+      color: var(--sand); margin-bottom: 0.5rem; position: relative;
+    }
+    .sub-gate p { color: rgba(245,230,200,0.6); font-size: 0.9rem; margin-bottom: 1.5rem; position: relative; }
+    .paypal-btn {
+      display: inline-block; position: relative;
+      background: #0070BA; color: white; border: none;
+      padding: 0.85rem 2.5rem; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 1rem;
+      font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: background .2s;
+    }
+    .paypal-btn:hover { background: #003087; }
+    .paypal-note { font-size: 0.72rem; color: rgba(245,230,200,0.35); margin-top: 0.75rem; position: relative; }
+
+    /* ── FILTERS ── */
+    .filters-bar {
+      background: var(--light); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.25rem;
+      display: flex; gap: 0.75rem; flex-wrap: wrap;
+      margin-bottom: 1.5rem; align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; min-width: 130px; }
+    .filter-group label { font-size: 0.72rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    select {
+      padding: 0.55rem 0.75rem; border: 1.5px solid var(--border);
+      border-radius: 8px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem; color: var(--earth); background: white;
+      outline: none; cursor: pointer;
+    }
+    select:focus { border-color: var(--rust); }
+    .btn-filter-clear {
+      padding: 0.55rem 1rem; border: 1.5px solid var(--border);
+      border-radius: 8px; background: none; font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem; color: var(--muted); cursor: pointer; align-self: flex-end;
+    }
+    .btn-filter-clear:hover { border-color: var(--rust); color: var(--rust); }
+
+    /* ── JOB CARDS (trucker view) ── */
+    .jobs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .job-card {
+      background: var(--light); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 1.5rem; transition: border-color .2s, transform .2s;
+    }
+    .job-card:hover { border-color: rgba(200,75,31,0.35); transform: translateY(-2px); }
+    .job-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+    .job-route { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--earth); line-height: 1.3; }
+    .job-route .arrow { color: var(--rust); }
+    .price-tag {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 1.05rem; color: var(--rust); white-space: nowrap;
+    }
+    .job-meta {
+      display: flex; gap: 0.75rem; flex-wrap: wrap;
+      font-size: 0.76rem; color: var(--muted); margin-bottom: 1.1rem;
+    }
+    .job-meta span { display: flex; align-items: center; gap: 0.3rem; }
+    .cargo-pill {
+      display: inline-block; background: var(--sand);
+      padding: 0.2rem 0.6rem; border-radius: 100px;
+      font-size: 0.7rem; color: var(--mid); font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+    .btn-apply {
+      width: 100%; padding: 0.7rem; border-radius: 8px;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      color: white; border: none; font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem; font-weight: 500; cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn-apply:hover { opacity: 0.9; }
+    .btn-apply:disabled { opacity: 0.5; cursor: not-allowed; background: var(--muted); }
+    .applied-badge {
+      width: 100%; padding: 0.7rem; border-radius: 8px;
+      background: rgba(45,106,79,0.1); border: 1px solid rgba(45,106,79,0.2);
+      color: var(--green); font-size: 0.875rem; font-weight: 500;
+      text-align: center;
+    }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--light); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1.5rem; }
+    .stat-card .label { font-size: 0.75rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 0.4rem; }
+    .stat-card .value { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2rem; color: var(--earth); line-height: 1; }
+    .stat-card .sub { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+
+    /* Profile */
+    .form-card { background: var(--light); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; max-width: 680px; }
+    .form-section-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem; color: var(--earth); margin-bottom: 1rem; margin-top: 1.5rem; }
+    .form-section-label:first-child { margin-top: 0; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--earth); color: var(--sand); padding: 0.85rem 1.5rem; border-radius: 10px; font-size: 0.85rem; z-index: 300; transform: translateY(20px); opacity: 0; transition: all .3s; pointer-events: none; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    .empty-state { text-align: center; padding: 3rem; color: var(--muted); }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+    @media (max-width: 900px) {
+      .jobs-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .hamburger-btn { display: block; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="../index.html" class="sidebar-logo">
+      <div class="logo-icon">🚛</div>
+      <div class="logo-text">
+        <strong>LoadX</strong>
+        <span>Africa</span>
+      </div>
+    </a>
+    <div class="nav-section">
+      <div class="nav-label">Menu</div>
+      <button class="nav-item active" onclick="showView('browse')"><span class="icon">🔍</span> Browse Loads</button>
+      <button class="nav-item" onclick="showView('myjobs')"><span class="icon">📋</span> My Applications</button>
+      <button class="nav-item" onclick="showView('subscription')"><span class="icon">💳</span> Subscription</button>
+      <button class="nav-item" onclick="showView('profile')"><span class="icon">🏢</span> Company Profile</button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="sidebarAvatar">?</div>
+        <div>
+          <div class="user-name" id="sidebarName">Loading…</div>
+          <div class="user-role">Trucking Company</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">⬅️ Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div style="display:flex; align-items:center; gap:1rem">
+        <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M3 6h16M3 11h16M3 16h16" stroke="#2C1A0E" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <span class="topbar-title" id="topbarTitle">Browse Loads</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:.75rem">
+        <span class="sub-badge" id="subBadge">Loading…</span>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ── BROWSE LOADS ── -->
+      <div class="view active" id="view-browse">
+
+        <!-- Subscription gate (shown when not subscribed) -->
+        <div id="subGate" style="display:none">
+          <div class="sub-gate">
+            <h3>🔒 Subscribe to Apply for Jobs</h3>
+            <p>Your free trial has ended. Subscribe via PayPal for BWP 500/month to browse and apply for all available loads.</p>
+            <!-- 
+              PayPal subscription button.
+              Replace data-plan-id with your PayPal subscription plan ID.
+              See: https://developer.paypal.com/docs/subscriptions/
+            -->
+            <div id="paypal-container-DDQK6TNUEX9B8"></div>
+            <p class="paypal-note">Secure payment via PayPal · Cancel anytime</p>
+          </div>
+        </div>
+
+        <div id="browseContent">
+          <!-- Trial banner -->
+          <div id="trialBanner" style="display:none; background:rgba(232,124,42,0.1); border:1px solid rgba(232,124,42,0.25); border-radius:10px; padding:.85rem 1.25rem; margin-bottom:1.5rem; font-size:.82rem; display:flex; justify-content:space-between; align-items:center">
+            <span>⏳ Free trial — <strong id="trialDaysLeft"></strong> days remaining. Subscribe to keep full access.</span>
+            <button onclick="showView('subscription')" style="background:var(--amber); color:white; border:none; padding:.35rem .85rem; border-radius:6px; font-size:.78rem; cursor:pointer">Subscribe</button>
+          </div>
+
+          <!-- Filters -->
+          <div class="filters-bar">
+            <div class="filter-group">
+              <label>Cargo Type</label>
+              <select id="filterCargo" onchange="applyFilters()">
+                <option value="">All Types</option>
+                <option value="general">General</option>
+                <option value="refrigerated">Refrigerated</option>
+                <option value="hazardous">Hazardous</option>
+                <option value="bulk">Bulk</option>
+                <option value="containers">Containers</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Industry</label>
+              <select id="filterIndustry" onchange="applyFilters()">
+                <option value="">All Industries</option>
+                <option value="agriculture">Agriculture</option>
+                <option value="manufacturing">Manufacturing</option>
+                <option value="retail">Retail</option>
+                <option value="mining">Mining</option>
+                <option value="logistics">Logistics</option>
+                <option value="construction">Construction</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Pickup Country</label>
+              <select id="filterPickup" onchange="applyFilters()">
+                <option value="">All Countries</option>
+                <option value="BWA">🇧🇼 Botswana</option>
+                <option value="ZAF">🇿🇦 South Africa</option>
+                <option value="NAM">🇳🇦 Namibia</option>
+                <option value="ZWE">🇿🇼 Zimbabwe</option>
+                <option value="ZMB">🇿🇲 Zambia</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Destination</label>
+              <select id="filterDelivery" onchange="applyFilters()">
+                <option value="">All Destinations</option>
+                <option value="BWA">🇧🇼 Botswana</option>
+                <option value="ZAF">🇿🇦 South Africa</option>
+                <option value="NAM">🇳🇦 Namibia</option>
+                <option value="ZWE">🇿🇼 Zimbabwe</option>
+                <option value="ZMB">🇿🇲 Zambia</option>
+              </select>
+            </div>
+            <button class="btn-filter-clear" onclick="clearFilters()">Clear</button>
+          </div>
+
+          <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
+            <div style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; color:var(--earth)">
+              Available Jobs <span id="jobCount" style="font-size:.8rem; color:var(--muted); font-weight:400"></span>
+            </div>
+          </div>
+
+          <div class="jobs-grid" id="jobsGrid">
+            <div class="empty-state" style="grid-column:1/-1">
+              <div class="empty-icon">🔍</div>
+              <p>Loading available jobs…</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MY APPLICATIONS ── -->
+      <div class="view" id="view-myjobs">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="label">Applied</div><div class="value" id="myApplied">—</div></div>
+          <div class="stat-card"><div class="label">Accepted</div><div class="value" id="myAccepted">—</div></div>
+          <div class="stat-card"><div class="label">Completed</div><div class="value" id="myCompleted">—</div></div>
+        </div>
+        <div style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; color:var(--earth); margin-bottom:1rem;">Your Jobs</div>
+        <div id="myJobsList" class="jobs-grid">
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon">📋</div>
+            <p>Loading your applications…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUBSCRIPTION ── -->
+      <div class="view" id="view-subscription">
+        <div class="form-card">
+          <div class="form-section-label">💳 Your Subscription</div>
+          <div id="subInfo" style="margin-bottom:2rem; font-size:.875rem; color:var(--muted); line-height:1.8"></div>
+
+          <div style="background:var(--sand); border-radius:14px; padding:2rem; text-align:center; margin-bottom:1.5rem">
+            <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:2rem; color:var(--rust)">BWP 500<span style="font-size:1rem; color:var(--muted); font-weight:400">/month</span></div>
+            <p style="font-size:.82rem; color:var(--muted); margin-top:.25rem">Full access to all freight jobs · Cancel anytime</p>
+            <ul style="list-style:none; margin:1.25rem 0; font-size:.85rem; color:var(--mid); text-align:left; display:inline-block">
+              <li style="padding:.3rem 0">✓ Browse all available loads</li>
+              <li style="padding:.3rem 0">✓ Apply to unlimited jobs</li>
+              <li style="padding:.3rem 0">✓ Filter by route, cargo type</li>
+              <li style="padding:.3rem 0">✓ Job history dashboard</li>
+            </ul>
+            <div id="paypal-container-DDQK6TNUEX9B8-sub" style="margin-top:1rem"></div>
+            <p style="font-size:.72rem; color:var(--muted); margin-top:.75rem">🔒 Secure payment via PayPal</p>
+          </div>
+
+          <div style="background:rgba(200,75,31,0.05); border-radius:10px; padding:1rem; font-size:.8rem; color:var(--muted)">
+            <strong style="color:var(--earth)">How PayPal subscription works:</strong><br/>
+            After subscribing, your account is activated within minutes. You can cancel anytime from your PayPal account. No hidden fees.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROFILE ── -->
+      <div class="view" id="view-profile">
+        <div class="form-card">
+          <div class="form-section-label">🚛 Company Profile</div>
+          <p style="color:var(--muted); font-size:.85rem; margin-bottom:1.5rem">Your company details as shown to shippers when you apply.</p>
+          <div id="profileContent" style="display:grid; gap:.75rem; font-size:.875rem;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  paypal.HostedButtons({ hostedButtonId: "DDQK6TNUEX9B8" }).render("#paypal-container-DDQK6TNUEX9B8");
+  paypal.HostedButtons({ hostedButtonId: "DDQK6TNUEX9B8" }).render("#paypal-container-DDQK6TNUEX9B8-sub");
+</script>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, collection, doc, getDoc, getDocs, updateDoc,
+    query, where, orderBy, serverTimestamp, onSnapshot, arrayUnion
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // 🔧 REPLACE WITH YOUR FIREBASE CONFIG
+  const firebaseConfig = {
+    apiKey: "AIzaSyAaWtWCv6vs7o9X1uoDpLO67-qE26oO6PY",
+    authDomain: "loadx-e407e.firebaseapp.com",
+    projectId: "loadx-e407e",
+    storageBucket: "loadx-e407e.firebasestorage.app",
+    messagingSenderId: "178795587005",
+    appId: "1:178795587005:web:ee8818d2fb44f216759ed4",
+    measurementId: "G-ZDE4527SJY"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+  let userProfile = null;
+  let allJobs = [];
+  let myApplications = new Set();
+  let isSubscribed = false;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = '../auth.html?mode=login'; return; }
+    currentUser = user;
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (!snap.exists() || snap.data().role === 'shipping_entity') {
+      window.location.href = '../shipper/index.html'; return;
+    }
+    userProfile = snap.data();
+
+    // Handle PayPal return URL after successful payment
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      window.history.replaceState({}, '', window.location.pathname);
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          subscriptionStatus: 'active',
+          subscribedAt: serverTimestamp()
+        });
+        userProfile.subscriptionStatus = 'active';
+      } catch (err) {
+        console.error('Firestore update failed after payment:', err);
+      }
+    }
+
+    checkSubscription();
+    initDashboard();
+  });
+
+  function checkSubscription() {
+    const status = userProfile.subscriptionStatus;
+    const badge = document.getElementById('subBadge');
+
+    if (status === 'active') {
+      isSubscribed = true;
+      badge.className = 'sub-badge sub-active';
+      badge.textContent = '✓ Subscribed';
+    } else if (status === 'trial') {
+      const trialEnd = userProfile.trialEndsAt?.toDate ? userProfile.trialEndsAt.toDate() : new Date(userProfile.trialEndsAt);
+      const daysLeft = Math.ceil((trialEnd - Date.now()) / (1000*60*60*24));
+      if (daysLeft > 0) {
+        isSubscribed = true;
+        badge.className = 'sub-badge sub-trial';
+        badge.textContent = `⏳ Trial: ${daysLeft}d left`;
+        const banner = document.getElementById('trialBanner');
+        if (banner) { banner.style.display = 'flex'; document.getElementById('trialDaysLeft').textContent = daysLeft; }
+      } else {
+        isSubscribed = false;
+        badge.className = 'sub-badge sub-expired';
+        badge.textContent = '⚠️ Trial ended';
+      }
+    } else {
+      isSubscribed = false;
+      badge.className = 'sub-badge sub-expired';
+      badge.textContent = '⚠️ Not subscribed';
+    }
+
+    document.getElementById('subGate').style.display = isSubscribed ? 'none' : 'block';
+    document.getElementById('browseContent').style.display = isSubscribed ? 'block' : 'none';
+
+    // Subscription info panel
+    const subMap = { active: '✅ Active subscription', trial: '⏳ Free trial', inactive: '❌ Inactive', expired: '❌ Expired' };
+    document.getElementById('subInfo').innerHTML = `
+      <strong>Status:</strong> ${subMap[status] || status}<br/>
+      ${userProfile.trialEndsAt ? `<strong>Trial ends:</strong> ${new Date(userProfile.trialEndsAt?.toDate ? userProfile.trialEndsAt.toDate() : userProfile.trialEndsAt).toLocaleDateString()}<br/>` : ''}
+      ${isSubscribed ? '<span style="color:var(--green)">You have full access to all freight jobs.</span>' : '<span style="color:var(--error)">Subscribe below to access freight jobs.</span>'}
+    `;
+
+  }
+
+  function initDashboard() {
+    const name = userProfile.companyName || userProfile.contactPersonName || 'Carrier';
+    document.getElementById('sidebarName').textContent = name;
+    document.getElementById('sidebarAvatar').textContent = name[0].toUpperCase();
+    loadAvailableJobs();
+    loadMyJobs();
+    renderProfile();
+  }
+
+  const countryFlags = { BWA:'🇧🇼', ZAF:'🇿🇦', NAM:'🇳🇦', ZWE:'🇿🇼', ZMB:'🇿🇲' };
+
+  function loadAvailableJobs() {
+    const q = query(
+      collection(db, "jobs"),
+      where("status", "==", "available"),
+      orderBy("createdAt", "desc")
+    );
+    onSnapshot(q, (snap) => {
+      allJobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      applyFilters();
+    });
+  }
+
+  window.applyFilters = () => {
+    const cargo = document.getElementById('filterCargo')?.value;
+    const industry = document.getElementById('filterIndustry')?.value;
+    const pickup = document.getElementById('filterPickup')?.value;
+    const delivery = document.getElementById('filterDelivery')?.value;
+
+    let filtered = allJobs;
+    if (cargo) filtered = filtered.filter(j => j.cargoType === cargo);
+    if (industry) filtered = filtered.filter(j => j.industry === industry);
+    if (pickup) filtered = filtered.filter(j => j.pickupCountry === pickup);
+    if (delivery) filtered = filtered.filter(j => j.deliveryCountry === delivery);
+
+    document.getElementById('jobCount').textContent = `(${filtered.length})`;
+    renderJobCards(filtered);
+  };
+
+  window.clearFilters = () => {
+    ['filterCargo','filterIndustry','filterPickup','filterDelivery'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    applyFilters();
+  };
+
+  function renderJobCards(jobs) {
+    const grid = document.getElementById('jobsGrid');
+    if (jobs.length === 0) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">📦</div>
+        <p>No jobs match your filters. Try adjusting the criteria.</p>
+      </div>`;
+      return;
+    }
+    grid.innerHTML = jobs.map(job => {
+      const alreadyApplied = (job.applicants || []).some(a => a.uid === currentUser.uid);
+      const pd = job.pickupDate ? new Date(job.pickupDate).toLocaleDateString() : '—';
+      return `<div class="job-card">
+        <div class="job-card-top">
+          <div class="job-route">
+            ${countryFlags[job.pickupCountry] || ''} ${job.pickupAddress}<br/>
+            <span class="arrow">↓</span> ${countryFlags[job.deliveryCountry] || ''} ${job.deliveryAddress}
+          </div>
+          <div class="price-tag">BWP ${job.paymentAmount?.toLocaleString()}</div>
+        </div>
+        <span class="cargo-pill">${job.cargoType} · ${job.industry}</span>
+        <div class="job-meta">
+          <span>⚖️ ${job.cargoWeight?.toLocaleString()} kg</span>
+          <span>📦 ${job.cargoVolume} m³</span>
+          <span>📅 ${pd}</span>
+          ${job.insuranceRequired ? '<span>🛡️ Insurance req.</span>' : ''}
+        </div>
+        ${job.notes ? `<div style="font-size:.75rem; color:var(--muted); margin-bottom:.75rem; line-height:1.5">${job.notes}</div>` : ''}
+        ${alreadyApplied
+          ? `<div class="applied-badge">✓ Applied</div>`
+          : `<button class="btn-apply" onclick="applyToJob('${job.id}', '${job.shipperId}')">Apply for this Load</button>`
+        }
+      </div>`;
+    }).join('');
+  }
+
+  window.applyToJob = async (jobId, shipperId) => {
+    if (!isSubscribed) {
+      showView('subscription'); return;
+    }
+    const jobRef = doc(db, "jobs", jobId);
+    const applicantData = {
+      uid: currentUser.uid,
+      companyName: userProfile.companyName,
+      contactPerson: userProfile.contactPersonName,
+      phoneNumber: userProfile.phoneNumber,
+      physicalAddress: userProfile.physicalAddress,
+      country: userProfile.country,
+      fleetSize: userProfile.fleetSize,
+      cargoTypes: userProfile.cargoTypes,
+      appliedAt: new Date().toISOString()
+    };
+    await updateDoc(jobRef, { applicants: arrayUnion(applicantData) });
+    showToast('✓ Application submitted!');
+    // Re-render will happen via onSnapshot
+  };
+
+  function loadMyJobs() {
+    const q = query(
+      collection(db, "jobs"),
+      where("carrierId", "==", currentUser.uid)
+    );
+    onSnapshot(q, (snap) => {
+      const taken = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      document.getElementById('myAccepted').textContent = taken.filter(j => j.status === 'taken').length;
+      document.getElementById('myCompleted').textContent = taken.filter(j => j.status === 'completed').length;
+      renderMyJobs(taken);
+    });
+
+    // Count applied
+    onSnapshot(query(collection(db, "jobs")), (snap) => {
+      let applied = 0;
+      snap.docs.forEach(d => {
+        const apps = d.data().applicants || [];
+        if (apps.some(a => a.uid === currentUser.uid)) applied++;
+      });
+      document.getElementById('myApplied').textContent = applied;
+    });
+  }
+
+  async function renderMyJobs(jobs) {
+    const grid = document.getElementById('myJobsList');
+    if (jobs.length === 0) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">📋</div>
+        <p>No accepted jobs yet. Keep applying!</p>
+      </div>`;
+      return;
+    }
+
+    const shipperIds = [...new Set(jobs.map(j => j.shipperId).filter(Boolean))];
+    const shipperProfiles = {};
+    await Promise.all(shipperIds.map(async (sid) => {
+      const snap = await getDoc(doc(db, "users", sid));
+      if (snap.exists()) shipperProfiles[sid] = snap.data();
+    }));
+
+    grid.innerHTML = jobs.map(job => {
+      const pd = job.pickupDate ? new Date(job.pickupDate).toLocaleDateString() : '—';
+      const dd = job.deliveryDeadline ? new Date(job.deliveryDeadline).toLocaleDateString() : '—';
+      const shipper = shipperProfiles[job.shipperId] || {};
+      const statusColor = job.status === 'completed' ? 'var(--green)' : 'var(--rust)';
+      return `<div class="job-card">
+        <div class="job-card-top">
+          <div class="job-route">
+            ${countryFlags[job.pickupCountry] || ''} ${job.pickupAddress}<br/>
+            <span class="arrow">↓</span> ${countryFlags[job.deliveryCountry] || ''} ${job.deliveryAddress}
+          </div>
+          <div class="price-tag">BWP ${job.paymentAmount?.toLocaleString()}</div>
+        </div>
+        <span class="cargo-pill">${job.cargoType} · ${job.industry}</span>
+        <div class="job-meta">
+          <span>⚖️ ${job.cargoWeight?.toLocaleString()} kg</span>
+          <span>📅 Pickup: ${pd}</span>
+          <span>🏁 Deadline: ${dd}</span>
+          ${job.insuranceRequired ? '<span>🛡️ Insurance req.</span>' : ''}
+          <span style="color:${statusColor}; font-weight:600; text-transform:uppercase">${job.status}</span>
+        </div>
+        <div style="background:rgba(200,75,31,0.04); border:1px solid var(--border); border-radius:10px; padding:.85rem 1rem; margin-top:.5rem">
+          <div style="font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--rust); margin-bottom:.65rem">📦 Shipper Contact</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:.45rem .75rem; font-size:.8rem; color:var(--earth)">
+            <div><span style="color:var(--muted)">Company: </span><strong>${shipper.companyName || job.shipperName || '—'}</strong></div>
+            <div><span style="color:var(--muted)">Contact: </span>${shipper.contactPersonName || '—'}</div>
+            ${shipper.phoneNumber ? `<div><span style="color:var(--muted)">Phone: </span><a href="tel:${shipper.phoneNumber}" style="color:var(--rust); text-decoration:none">${shipper.phoneNumber}</a></div>` : ''}
+            ${shipper.physicalAddress ? `<div><span style="color:var(--muted)">Address: </span>${shipper.physicalAddress}</div>` : ''}
+            ${shipper.country ? `<div><span style="color:var(--muted)">Country: </span>${shipper.country}</div>` : ''}
+            ${shipper.businessRegistrationNumber ? `<div><span style="color:var(--muted)">Reg #: </span>${shipper.businessRegistrationNumber}</div>` : ''}
+          </div>
+        </div>
+        <div style="margin-top:.6rem; display:flex; flex-direction:column; gap:.25rem; font-size:.78rem; color:var(--muted)">
+          <div>💳 <strong style="color:var(--earth)">Payment Terms:</strong> ${job.paymentTerms || '—'}</div>
+          ${job.specialHandling ? `<div>⚠️ <strong style="color:var(--earth)">Special Handling:</strong> ${job.specialHandling}</div>` : ''}
+          ${job.notes ? `<div>📝 <strong style="color:var(--earth)">Notes:</strong> ${job.notes}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderProfile() {
+    const p = userProfile;
+    const fields = [
+      ['Company', p.companyName],
+      ['Contact Person', p.contactPersonName],
+      ['Phone', p.phoneNumber],
+      ['Address', p.physicalAddress],
+      ['Country', p.country],
+      ['Fleet Size', p.fleetSize ? `${p.fleetSize} trucks` : '—'],
+      ['Cargo Types', (p.cargoTypes || []).join(', ') || '—'],
+      ['Business Reg #', p.businessRegistrationNumber || '—'],
+    ];
+    document.getElementById('profileContent').innerHTML = fields.map(([k, v]) =>
+      `<div style="display:flex; gap:1rem; padding:.6rem 0; border-bottom:1px solid var(--border)">
+        <span style="color:var(--muted); width:140px; flex-shrink:0; font-size:.78rem; font-weight:500;">${k}</span>
+        <span style="color:var(--earth)">${v || '—'}</span>
+      </div>`
+    ).join('');
+  }
+
+
+  window.doLogout = async () => {
+    await signOut(auth);
+    window.location.href = '../index.html';
+  };
+
+  function showToast(msg, dur = 3500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), dur);
+  }
+
+  // Make showToast available globally
+  window._showToast = showToast;
+</script>
+
+<script>
+  function showView(v) {
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('view-' + v).classList.add('active');
+    const titles = { browse: 'Browse Loads', myjobs: 'My Applications', subscription: 'Subscription', profile: 'Company Profile' };
+    document.getElementById('topbarTitle').textContent = titles[v] || v;
+    const idx = { browse: 0, myjobs: 1, subscription: 2, profile: 3 }[v];
+    document.querySelectorAll('.nav-item')[idx]?.classList.add('active');
+    document.getElementById('sidebar').classList.remove('open');
+  }
+</script>
+</body>
+</html>
