@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LoadX Africa — Shipper Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --rust: #C84B1F; --amber: #E87C2A; --sand: #F5E6C8;
+      --earth: #2C1A0E; --dark: #1A0F06; --mid: #4A2F1A;
+      --muted: #8A6A50; --light: #FAF5EE; --green: #2D6A4F;
+      --border: rgba(200,75,31,0.15); --error: #D9534F;
+      --sidebar: 240px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: #F2EBE0; color: var(--earth); }
+
+    /* ── LAYOUT ── */
+    .app { display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: var(--sidebar); background: var(--dark);
+      display: flex; flex-direction: column;
+      position: fixed; left: 0; top: 0; bottom: 0;
+      z-index: 50; transition: transform .3s;
+    }
+    .sidebar-logo {
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(200,75,31,0.12);
+      display: flex; align-items: center; gap: 10px; text-decoration: none;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .logo-text strong { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; color: var(--sand); display: block; }
+    .logo-text span { font-size: 0.58rem; color: var(--amber); letter-spacing: .1em; text-transform: uppercase; }
+
+    .nav-section { padding: 1.5rem 0.75rem; flex: 1; overflow-y: auto; }
+    .nav-label {
+      font-size: 0.62rem; font-weight: 600; letter-spacing: .12em;
+      text-transform: uppercase; color: rgba(245,230,200,0.3);
+      padding: 0 0.75rem; margin-bottom: 0.5rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.65rem 0.75rem; border-radius: 8px;
+      color: rgba(245,230,200,0.55); font-size: 0.85rem;
+      cursor: pointer; transition: background .2s, color .2s;
+      text-decoration: none; margin-bottom: 2px;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: rgba(200,75,31,0.1); color: var(--sand); }
+    .nav-item.active { background: rgba(200,75,31,0.18); color: var(--sand); }
+    .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      padding: 1rem 0.75rem; border-top: 1px solid rgba(200,75,31,0.12);
+    }
+    .user-info {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.5rem 0.75rem; margin-bottom: 0.5rem;
+    }
+    .user-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; color: white; font-weight: 700; flex-shrink: 0;
+    }
+    .user-name { font-size: 0.8rem; color: var(--sand); font-weight: 500; line-height: 1.2; }
+    .user-role { font-size: 0.68rem; color: rgba(245,230,200,0.4); }
+    .logout-btn {
+      display: flex; align-items: center; gap: 0.5rem;
+      color: rgba(245,230,200,0.4); font-size: 0.8rem;
+      cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 8px;
+      transition: color .2s; background: none; border: none; width: 100%;
+    }
+    .logout-btn:hover { color: var(--error); }
+
+    /* MAIN CONTENT */
+    .main { margin-left: var(--sidebar); flex: 1; display: flex; flex-direction: column; }
+    .topbar {
+      background: var(--light); border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 40;
+    }
+    .topbar-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--earth); }
+    .topbar-right { display: flex; align-items: center; gap: 1rem; }
+    .hamburger-btn { display: none; background: none; border: none; cursor: pointer; }
+    .btn-post {
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      color: white; border: none; padding: 0.6rem 1.25rem;
+      border-radius: 8px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; gap: 0.4rem;
+      transition: opacity .2s;
+    }
+    .btn-post:hover { opacity: 0.9; }
+
+    .content { padding: 2rem; flex: 1; }
+
+    /* ── VIEWS ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── STATS STRIP ── */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--light); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.25rem 1.5rem;
+    }
+    .stat-card .label { font-size: 0.75rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 0.4rem; }
+    .stat-card .value { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2rem; color: var(--earth); line-height: 1; }
+    .stat-card .sub { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+
+    /* ── JOBS ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--earth); }
+
+    .jobs-list { display: flex; flex-direction: column; gap: 1rem; }
+
+    .job-card {
+      background: var(--light); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.5rem; transition: border-color .2s;
+    }
+    .job-card:hover { border-color: rgba(200,75,31,0.35); }
+    .job-card-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .job-route { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--earth); }
+    .job-route span { color: var(--rust); }
+    .status-badge {
+      padding: 0.25rem 0.75rem; border-radius: 100px;
+      font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .status-available { background: rgba(45,106,79,0.12); color: var(--green); }
+    .status-taken { background: rgba(200,75,31,0.12); color: var(--rust); }
+    .status-completed { background: rgba(74,47,26,0.08); color: var(--mid); }
+
+    .job-meta {
+      display: flex; gap: 1.5rem; flex-wrap: wrap;
+      font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem;
+    }
+    .job-meta span { display: flex; align-items: center; gap: 0.35rem; }
+    .job-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+    .btn-sm {
+      padding: 0.45rem 1rem; border-radius: 7px; font-size: 0.8rem;
+      font-family: 'DM Sans', sans-serif; cursor: pointer; font-weight: 500;
+      transition: opacity .15s;
+    }
+    .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--mid); }
+    .btn-outline:hover { border-color: var(--rust); color: var(--rust); }
+    .btn-danger { background: rgba(217,83,79,0.08); border: 1.5px solid rgba(217,83,79,0.2); color: var(--error); }
+    .btn-danger:hover { background: rgba(217,83,79,0.15); }
+
+    /* Applicants */
+    .applicants-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(200,75,31,0.08); border: 1px solid var(--border);
+      border-radius: 6px; padding: 0.3rem 0.65rem;
+      font-size: 0.75rem; color: var(--rust); font-weight: 500;
+    }
+
+    /* ── POST JOB FORM ── */
+    .form-card {
+      background: var(--light); border: 1px solid var(--border);
+      border-radius: 16px; padding: 2rem; max-width: 760px;
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+    .form-full { grid-column: 1 / -1; }
+    .field-group { margin-bottom: 0; }
+    label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--mid); margin-bottom: 0.3rem; }
+    input, select, textarea {
+      width: 100%; padding: 0.65rem 0.85rem;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+      color: var(--earth); background: white;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--rust); box-shadow: 0 0 0 3px rgba(200,75,31,0.08);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    .form-section-label {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
+      color: var(--earth); margin-bottom: 1rem; margin-top: 1.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .form-section-label:first-child { margin-top: 0; }
+    .submit-btn {
+      margin-top: 1.5rem; padding: 0.85rem 2.5rem;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      color: white; border: none; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+      font-weight: 600; cursor: pointer; transition: opacity .2s;
+    }
+    .submit-btn:hover { opacity: 0.9; }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── MODAL (applicants) ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(26,15,6,0.7);
+      z-index: 200; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal {
+      background: var(--light); border-radius: 20px;
+      width: 90%; max-width: 600px; max-height: 80vh;
+      overflow-y: auto; padding: 2rem;
+      transform: translateY(20px); transition: transform .2s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+    .modal-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--muted); }
+    .applicant-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem; border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 0.75rem;
+    }
+    .app-name { font-weight: 600; font-size: 0.9rem; color: var(--earth); }
+    .app-detail { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .btn-accept {
+      background: var(--green); color: white; border: none;
+      padding: 0.4rem 1rem; border-radius: 7px;
+      font-size: 0.8rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: opacity .2s;
+    }
+    .btn-accept:hover { opacity: 0.85; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--earth); color: var(--sand);
+      padding: 0.85rem 1.5rem; border-radius: 10px;
+      font-size: 0.85rem; z-index: 300;
+      transform: translateY(20px); opacity: 0;
+      transition: all .3s; pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    .empty-state {
+      text-align: center; padding: 3rem; color: var(--muted);
+    }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .empty-state p { font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .hamburger-btn { display: block; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="../index.html" class="sidebar-logo">
+      <div class="logo-icon">🚛</div>
+      <div class="logo-text">
+        <strong>LoadX</strong>
+        <span>Africa</span>
+      </div>
+    </a>
+
+    <div class="nav-section">
+      <div class="nav-label">Menu</div>
+      <button class="nav-item active" onclick="showView('jobs')">
+        <span class="icon">📋</span> My Jobs
+      </button>
+      <button class="nav-item" onclick="showView('post')">
+        <span class="icon">➕</span> Post a Job
+      </button>
+      <button class="nav-item" onclick="showView('profile')">
+        <span class="icon">🏢</span> Company Profile
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="sidebarAvatar">?</div>
+        <div>
+          <div class="user-name" id="sidebarName">Loading…</div>
+          <div class="user-role">Shipping Entity</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">⬅️ Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div style="display:flex; align-items:center; gap:1rem">
+        <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M3 6h16M3 11h16M3 16h16" stroke="#2C1A0E" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <span class="topbar-title" id="topbarTitle">My Jobs</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-post" onclick="showView('post')">+ Post a Job</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ── VIEW: JOBS ── -->
+      <div class="view active" id="view-jobs">
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card"><div class="label">Total Jobs</div><div class="value" id="statTotal">—</div></div>
+          <div class="stat-card"><div class="label">Available</div><div class="value" id="statAvail">—</div></div>
+          <div class="stat-card"><div class="label">Taken</div><div class="value" id="statTaken">—</div></div>
+          <div class="stat-card"><div class="label">Completed</div><div class="value" id="statDone">—</div></div>
+        </div>
+
+        <div class="section-header">
+          <div class="section-title">Your Posted Jobs</div>
+        </div>
+
+        <div class="jobs-list" id="jobsList">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>Loading your jobs…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VIEW: POST JOB ── -->
+      <div class="view" id="view-post">
+        <div class="form-card">
+          <div class="form-section-label">📦 Cargo Details</div>
+          <form id="postJobForm" onsubmit="submitJob(event)">
+            <div class="form-grid">
+              <div class="field-group">
+                <label>Cargo Type *</label>
+                <select id="cargoType" required>
+                  <option value="">Select type</option>
+                  <option value="general">General</option>
+                  <option value="refrigerated">Refrigerated</option>
+                  <option value="hazardous">Hazardous</option>
+                  <option value="bulk">Bulk</option>
+                  <option value="containers">Containers</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Industry *</label>
+                <select id="industry" required>
+                  <option value="">Select industry</option>
+                  <option value="agriculture">Agriculture</option>
+                  <option value="manufacturing">Manufacturing</option>
+                  <option value="retail">Retail</option>
+                  <option value="mining">Mining</option>
+                  <option value="logistics">Logistics</option>
+                  <option value="construction">Construction</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Weight (kg) *</label>
+                <input type="number" id="cargoWeight" placeholder="e.g. 5000" min="1" required />
+              </div>
+              <div class="field-group">
+                <label>Volume (m³) *</label>
+                <input type="number" id="cargoVolume" placeholder="e.g. 20" min="1" required />
+              </div>
+            </div>
+
+            <div class="form-section-label">📍 Route</div>
+            <div class="form-grid">
+              <div class="field-group">
+                <label>Pickup Address *</label>
+                <input type="text" id="pickupAddress" placeholder="Street, City" required />
+              </div>
+              <div class="field-group">
+                <label>Pickup Country *</label>
+                <select id="pickupCountry" required>
+                  <option value="BWA">🇧🇼 Botswana</option>
+                  <option value="ZAF">🇿🇦 South Africa</option>
+                  <option value="NAM">🇳🇦 Namibia</option>
+                  <option value="ZWE">🇿🇼 Zimbabwe</option>
+                  <option value="ZMB">🇿🇲 Zambia</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Delivery Address *</label>
+                <input type="text" id="deliveryAddress" placeholder="Street, City" required />
+              </div>
+              <div class="field-group">
+                <label>Delivery Country *</label>
+                <select id="deliveryCountry" required>
+                  <option value="BWA">🇧🇼 Botswana</option>
+                  <option value="ZAF">🇿🇦 South Africa</option>
+                  <option value="NAM">🇳🇦 Namibia</option>
+                  <option value="ZWE">🇿🇼 Zimbabwe</option>
+                  <option value="ZMB">🇿🇲 Zambia</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-section-label">📅 Schedule & Payment</div>
+            <div class="form-grid">
+              <div class="field-group">
+                <label>Pickup Date *</label>
+                <input type="date" id="pickupDate" required />
+              </div>
+              <div class="field-group">
+                <label>Delivery Deadline *</label>
+                <input type="date" id="deliveryDeadline" required />
+              </div>
+              <div class="field-group">
+                <label>Payment Amount (BWP) *</label>
+                <input type="number" id="paymentAmount" placeholder="e.g. 8500" min="1" required />
+              </div>
+              <div class="field-group">
+                <label>Payment Terms *</label>
+                <input type="text" id="paymentTerms" placeholder="e.g. 50% upfront, 50% on delivery" required />
+              </div>
+            </div>
+
+            <div class="form-section-label">📝 Additional Details</div>
+            <div class="form-grid">
+              <div class="field-group form-full">
+                <label>Special Handling Instructions</label>
+                <textarea id="specialHandling" placeholder="Any special requirements…"></textarea>
+              </div>
+              <div class="field-group form-full">
+                <label>Notes</label>
+                <textarea id="notes" placeholder="Additional information for carriers…"></textarea>
+              </div>
+              <div class="field-group" style="display:flex; align-items:center; gap:.5rem">
+                <input type="checkbox" id="insuranceRequired" style="width:auto; margin:0" />
+                <label for="insuranceRequired" style="margin:0; cursor:pointer">Insurance Required</label>
+              </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="postBtn">Post Job</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ── VIEW: PROFILE ── -->
+      <div class="view" id="view-profile">
+        <div class="form-card" id="profileCard">
+          <div class="form-section-label">🏢 Company Profile</div>
+          <p style="color:var(--muted); font-size:.85rem; margin-bottom:1.5rem">Your company details as shown to carriers.</p>
+          <div id="profileContent" style="display:grid; gap:.75rem; font-size:.875rem;"></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Applicants Modal -->
+<div class="modal-overlay" id="applicantsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Applicants</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="applicantsList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc,
+    query, where, orderBy, serverTimestamp, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAaWtWCv6vs7o9X1uoDpLO67-qE26oO6PY",
+    authDomain: "loadx-e407e.firebaseapp.com",
+    projectId: "loadx-e407e",
+    storageBucket: "loadx-e407e.firebasestorage.app",
+    messagingSenderId: "178795587005",
+    appId: "1:178795587005:web:ee8818d2fb44f216759ed4",
+    measurementId: "G-ZDE4527SJY"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+  let userProfile = null;
+  let currentJobId = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = '../auth.html?mode=login'; return; }
+    currentUser = user;
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (!snap.exists() || snap.data().role === 'trucking_company') {
+      window.location.href = '../trucker/index.html'; return;
+    }
+    userProfile = snap.data();
+    initDashboard();
+  });
+
+  function initDashboard() {
+    const name = userProfile.companyName || userProfile.contactPersonName || 'User';
+    document.getElementById('sidebarName').textContent = name;
+    document.getElementById('sidebarAvatar').textContent = name[0].toUpperCase();
+    loadJobs();
+    renderProfile();
+  }
+
+  function loadJobs() {
+    const q = query(
+      collection(db, "jobs"),
+      where("shipperId", "==", currentUser.uid),
+      orderBy("createdAt", "desc")
+    );
+    onSnapshot(q, (snap) => {
+      const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      updateStats(jobs);
+      renderJobs(jobs);
+    });
+  }
+
+  function updateStats(jobs) {
+    document.getElementById('statTotal').textContent = jobs.length;
+    document.getElementById('statAvail').textContent = jobs.filter(j => j.status === 'available').length;
+    document.getElementById('statTaken').textContent = jobs.filter(j => j.status === 'taken').length;
+    document.getElementById('statDone').textContent = jobs.filter(j => j.status === 'completed').length;
+  }
+
+  const countryNames = { BWA:'Botswana', ZAF:'South Africa', NAM:'Namibia', ZWE:'Zimbabwe', ZMB:'Zambia' };
+  const countryFlags = { BWA:'🇧🇼', ZAF:'🇿🇦', NAM:'🇳🇦', ZWE:'🇿🇼', ZMB:'🇿🇲' };
+
+  function renderJobs(jobs) {
+    const list = document.getElementById('jobsList');
+    if (jobs.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>No jobs posted yet. <a href="#" onclick="showView('post')" style="color:var(--rust)">Post your first job →</a></p>
+      </div>`;
+      return;
+    }
+    list.innerHTML = jobs.map(job => {
+      const pickup = `${countryFlags[job.pickupCountry] || ''} ${job.pickupAddress}`;
+      const delivery = `${countryFlags[job.deliveryCountry] || ''} ${job.deliveryAddress}`;
+      const appCount = (job.applicants || []).length;
+      const pd = job.pickupDate?.toDate ? job.pickupDate.toDate().toLocaleDateString() : new Date(job.pickupDate).toLocaleDateString();
+      const dd = job.deliveryDeadline ? new Date(job.deliveryDeadline).toLocaleDateString() : '—';
+
+      let carrierSection = '';
+      if (job.status === 'taken' && job.carrierId) {
+        const carrier = (job.applicants || []).find(a => a.uid === job.carrierId);
+        if (carrier) {
+          carrierSection = `
+            <div style="background:rgba(45,106,79,0.05); border:1px solid rgba(45,106,79,0.2); border-radius:10px; padding:.85rem 1rem; margin-top:.75rem">
+              <div style="font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--green); margin-bottom:.65rem">✓ Accepted Carrier</div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:.45rem .75rem; font-size:.8rem; color:var(--earth)">
+                <div><span style="color:var(--muted)">Company: </span><strong>${carrier.companyName || '—'}</strong></div>
+                <div><span style="color:var(--muted)">Contact: </span>${carrier.contactPerson || '—'}</div>
+                ${carrier.phoneNumber ? `<div><span style="color:var(--muted)">Phone: </span><a href="tel:${carrier.phoneNumber}" style="color:var(--rust); text-decoration:none">${carrier.phoneNumber}</a></div>` : ''}
+                ${carrier.physicalAddress ? `<div><span style="color:var(--muted)">Address: </span>${carrier.physicalAddress}</div>` : ''}
+                ${carrier.fleetSize ? `<div><span style="color:var(--muted)">Fleet Size: </span>${carrier.fleetSize} trucks</div>` : ''}
+                ${(carrier.cargoTypes || []).length ? `<div style="grid-column:1/-1"><span style="color:var(--muted)">Cargo Types: </span>${carrier.cargoTypes.join(', ')}</div>` : ''}
+              </div>
+            </div>`;
+        }
+      }
+
+      return `<div class="job-card">
+        <div class="job-card-top">
+          <div>
+            <div class="job-route">${pickup} <span>→</span> ${delivery}</div>
+          </div>
+          <span class="status-badge status-${job.status}">${job.status}</span>
+        </div>
+        <div class="job-meta">
+          <span>📦 ${job.cargoType}</span>
+          <span>⚖️ ${job.cargoWeight?.toLocaleString()} kg</span>
+          <span>🏭 ${job.industry}</span>
+          <span>📅 Pickup: ${pd}</span>
+          <span>🏁 Deadline: ${dd}</span>
+          <span>💰 BWP ${job.paymentAmount?.toLocaleString()}</span>
+          ${job.insuranceRequired ? '<span>🛡️ Insurance req.</span>' : ''}
+        </div>
+        ${carrierSection}
+        ${appCount > 0 && job.status === 'available' ? `<span class="applicants-badge" onclick="openApplicants('${job.id}')" style="cursor:pointer; margin-top:.75rem; display:inline-flex">👥 ${appCount} applicant${appCount > 1 ? 's' : ''} — View</span>` : ''}
+        <div class="job-actions">
+          ${job.status === 'taken' ? `<button class="btn-sm btn-outline" onclick="markComplete('${job.id}')">✓ Mark Complete</button>` : ''}
+          ${job.status === 'available' ? `<button class="btn-sm btn-danger" onclick="deleteJob('${job.id}')">🗑 Remove</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Post a job
+  window.submitJob = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('postBtn');
+    btn.disabled = true; btn.textContent = 'Posting…';
+
+    const jobData = {
+      shipperId: currentUser.uid,
+      shipperName: userProfile.companyName || userProfile.contactPersonName,
+      cargoType: document.getElementById('cargoType').value,
+      industry: document.getElementById('industry').value,
+      cargoWeight: parseInt(document.getElementById('cargoWeight').value),
+      cargoVolume: parseInt(document.getElementById('cargoVolume').value),
+      pickupAddress: document.getElementById('pickupAddress').value.trim(),
+      pickupCountry: document.getElementById('pickupCountry').value,
+      deliveryAddress: document.getElementById('deliveryAddress').value.trim(),
+      deliveryCountry: document.getElementById('deliveryCountry').value,
+      pickupDate: document.getElementById('pickupDate').value,
+      deliveryDeadline: document.getElementById('deliveryDeadline').value,
+      paymentAmount: parseInt(document.getElementById('paymentAmount').value),
+      paymentTerms: document.getElementById('paymentTerms').value.trim(),
+      specialHandling: document.getElementById('specialHandling').value.trim() || null,
+      notes: document.getElementById('notes').value.trim() || null,
+      insuranceRequired: document.getElementById('insuranceRequired').checked,
+      status: 'available',
+      applicants: [],
+      createdAt: serverTimestamp(),
+    };
+
+    try {
+      await addDoc(collection(db, "jobs"), jobData);
+      showToast('✓ Job posted successfully!');
+      document.getElementById('postJobForm').reset();
+      showView('jobs');
+    } catch (err) {
+      showToast('❌ Error posting job: ' + err.message);
+    }
+    btn.disabled = false; btn.textContent = 'Post Job';
+  };
+
+  // Mark complete
+  window.markComplete = async (jobId) => {
+    await updateDoc(doc(db, "jobs", jobId), { status: 'completed', completedAt: serverTimestamp() });
+    showToast('✓ Job marked as completed');
+  };
+
+  // Delete job
+  window.deleteJob = async (jobId) => {
+    if (!confirm('Remove this job listing?')) return;
+    await updateDoc(doc(db, "jobs", jobId), { status: 'removed' });
+    showToast('Job removed');
+  };
+
+  // View applicants
+  window.openApplicants = async (jobId) => {
+    currentJobId = jobId;
+    const snap = await getDoc(doc(db, "jobs", jobId));
+    const job = snap.data();
+    const applicants = job.applicants || [];
+    const list = document.getElementById('applicantsList');
+
+    if (applicants.length === 0) {
+      list.innerHTML = '<p style="color:var(--muted); font-size:.85rem; text-align:center">No applicants yet.</p>';
+    } else {
+      const rows = await Promise.all(applicants.map(async (app) => {
+        let carrierName = app.companyName || 'Unknown carrier';
+        if (app.uid) {
+          const u = await getDoc(doc(db, "users", app.uid));
+          if (u.exists()) carrierName = u.data().companyName || u.data().contactPersonName;
+        }
+        return `<div class="applicant-row">
+          <div>
+            <div class="app-name">${carrierName}</div>
+            <div class="app-detail">Fleet: ${app.fleetSize || '?'} trucks · ${(app.cargoTypes || []).join(', ')}</div>
+          </div>
+          ${job.status === 'available' ? `<button class="btn-accept" onclick="acceptApplicant('${jobId}', '${app.uid}', '${carrierName}')">Accept</button>` : '<span style="font-size:.75rem;color:var(--muted)">Job taken</span>'}
+        </div>`;
+      }));
+      list.innerHTML = rows.join('');
+    }
+
+    document.getElementById('applicantsModal').classList.add('open');
+  };
+
+  window.acceptApplicant = async (jobId, uid, name) => {
+    await updateDoc(doc(db, "jobs", jobId), {
+      status: 'taken', carrierId: uid, takenAt: serverTimestamp()
+    });
+    closeModal();
+    showToast(`✓ ${name} accepted for this job!`);
+  };
+
+  window.closeModal = () => document.getElementById('applicantsModal').classList.remove('open');
+
+  function renderProfile() {
+    const p = userProfile;
+    const fields = [
+      ['Company', p.companyName],
+      ['Contact Person', p.contactPersonName],
+      ['Email', p.email],
+      ['Phone', p.phoneNumber],
+      ['Address', p.physicalAddress],
+      ['Country', p.country],
+      ['Business Reg #', p.businessRegistrationNumber || '—'],
+    ];
+    document.getElementById('profileContent').innerHTML = fields.map(([k, v]) =>
+      `<div style="display:flex; gap:1rem; padding:.6rem 0; border-bottom:1px solid var(--border)">
+        <span style="color:var(--muted); width:140px; flex-shrink:0; font-size:.78rem; font-weight:500;">${k}</span>
+        <span style="color:var(--earth)">${v || '—'}</span>
+      </div>`
+    ).join('');
+  }
+
+  window.doLogout = async () => {
+    await signOut(auth);
+    window.location.href = '../index.html';
+  };
+
+  function showToast(msg, dur = 3000) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), dur);
+  }
+</script>
+
+<script>
+  function showView(v) {
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('view-' + v).classList.add('active');
+    const titles = { jobs: 'My Jobs', post: 'Post a Job', profile: 'Company Profile' };
+    document.getElementById('topbarTitle').textContent = titles[v] || v;
+    // Highlight sidebar
+    const idx = { jobs: 0, post: 1, profile: 2 }[v];
+    document.querySelectorAll('.nav-item')[idx]?.classList.add('active');
+    // Close mobile sidebar
+    document.getElementById('sidebar').classList.remove('open');
+  }
+</script>
+</body>
+</html>
