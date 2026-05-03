@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LoadX Africa — Africa's Freight Matching Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --rust:    #C84B1F;
+      --amber:   #E87C2A;
+      --sand:    #F5E6C8;
+      --earth:   #2C1A0E;
+      --dark:    #1A0F06;
+      --mid:     #4A2F1A;
+      --muted:   #8A6A50;
+      --light:   #FAF5EE;
+      --white:   #FFFFFF;
+      --green:   #2D6A4F;
+      --border:  rgba(200,75,31,0.15);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--light);
+      color: var(--earth);
+      overflow-x: hidden;
+    }
+
+    /* ─── NAVBAR ─── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(250,245,238,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 clamp(1rem, 5vw, 4rem);
+    }
+    .nav-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+    .logo-text { line-height: 1; }
+    .logo-text strong {
+      display: block; font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.1rem; color: var(--earth);
+    }
+    .logo-text span {
+      font-size: 0.6rem; font-weight: 600; color: var(--rust);
+      letter-spacing: 0.12em; text-transform: uppercase;
+    }
+    .nav-links { display: flex; align-items: center; gap: 2rem; }
+    .nav-links a {
+      text-decoration: none; color: var(--mid); font-size: 0.9rem;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--rust); }
+    .nav-cta { display: flex; gap: 0.75rem; align-items: center; }
+    .btn-ghost {
+      background: none; border: 1.5px solid var(--border);
+      color: var(--earth); padding: 0.5rem 1.25rem;
+      border-radius: 8px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem; cursor: pointer; text-decoration: none;
+      transition: border-color .2s, color .2s;
+    }
+    .btn-ghost:hover { border-color: var(--rust); color: var(--rust); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      color: white; border: none; padding: 0.5rem 1.35rem;
+      border-radius: 8px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem; font-weight: 500; cursor: pointer;
+      text-decoration: none; transition: opacity .2s, transform .15s;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; }
+
+    /* ─── HERO ─── */
+    .hero {
+      padding: clamp(4rem, 10vw, 8rem) clamp(1rem, 5vw, 4rem);
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+      align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(200,75,31,0.08); border: 1px solid var(--border);
+      padding: 0.35rem 1rem; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 500; color: var(--rust);
+      margin-bottom: 1.5rem; letter-spacing: 0.04em;
+    }
+    .hero-badge::before {
+      content: ''; width: 6px; height: 6px;
+      background: var(--rust); border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.5); }
+    }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 800; line-height: 1.1;
+      color: var(--earth); margin-bottom: 1.25rem;
+    }
+    h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.05rem; line-height: 1.7; color: var(--muted);
+      max-width: 480px; margin-bottom: 2.5rem;
+    }
+    .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn-lg {
+      padding: 0.85rem 2rem; border-radius: 10px;
+      font-size: 0.95rem; font-weight: 500;
+    }
+    .btn-shipper {
+      background: var(--green); color: white; border: none;
+      font-family: 'DM Sans', sans-serif; cursor: pointer;
+      text-decoration: none; display: inline-flex;
+      align-items: center; gap: 0.5rem;
+      transition: opacity .2s, transform .15s;
+    }
+    .btn-shipper:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-trucker {
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      color: white; border: none;
+      font-family: 'DM Sans', sans-serif; cursor: pointer;
+      text-decoration: none; display: inline-flex;
+      align-items: center; gap: 0.5rem;
+      transition: opacity .2s, transform .15s;
+    }
+    .btn-trucker:hover { opacity: 0.9; transform: translateY(-1px); }
+    .trust-strip {
+      margin-top: 3rem; display: flex; gap: 2rem; flex-wrap: wrap;
+    }
+    .trust-item {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.82rem; color: var(--muted);
+    }
+    .trust-item span { color: var(--rust); font-size: 1rem; }
+
+    /* Hero visual */
+    .hero-visual {
+      position: relative; padding: 1.5rem;
+    }
+    .map-card {
+      background: var(--white); border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 2rem; box-shadow: 0 24px 64px rgba(44,26,14,0.12);
+      position: relative; overflow: hidden;
+    }
+    .map-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C84B1F' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .route-line {
+      width: 100%; height: 120px; position: relative; margin: 1rem 0;
+    }
+    .route-line svg { width: 100%; height: 100%; }
+    .job-pill {
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      color: white; padding: 0.6rem 1rem; border-radius: 10px;
+      font-size: 0.8rem; font-weight: 500; margin-bottom: 0.75rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .job-pill .tag {
+      background: rgba(255,255,255,0.25); padding: 0.15rem 0.5rem;
+      border-radius: 6px; font-size: 0.72rem;
+    }
+    .job-meta {
+      display: flex; gap: 1rem; font-size: 0.78rem; color: var(--muted);
+      margin-top: 1rem;
+    }
+    .stat-badge {
+      background: var(--sand); border-radius: 10px;
+      padding: 0.75rem 1.25rem; text-align: center;
+    }
+    .stat-badge strong {
+      display: block; font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1.3rem; color: var(--rust);
+    }
+    .stat-badge span { font-size: 0.72rem; color: var(--muted); }
+    .stat-row { display: flex; gap: 0.75rem; margin-top: 1rem; }
+    .float-chip {
+      position: absolute; background: white;
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.5rem 0.75rem; font-size: 0.75rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .chip-new { top: 0; right: -10px; color: var(--green); }
+    .chip-match { bottom: 10px; left: -10px; color: var(--rust); }
+
+    /* ─── FEATURES ─── */
+    .features {
+      background: var(--earth);
+      padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 5vw, 4rem);
+    }
+    .section-label {
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--amber); margin-bottom: 0.75rem;
+    }
+    h2 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.15;
+    }
+    .features h2 { color: var(--sand); margin-bottom: 1rem; }
+    .features > .section-inner { max-width: 1200px; margin: 0 auto; }
+    .features-header {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 3rem; align-items: end; margin-bottom: 3.5rem;
+    }
+    .features-header p { color: rgba(245,230,200,0.65); font-size: 1rem; line-height: 1.7; }
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1.5px; background: rgba(200,75,31,0.12);
+      border-radius: 16px; overflow: hidden;
+    }
+    .feat-card {
+      background: #21140A;
+      padding: 2rem; transition: background .2s;
+    }
+    .feat-card:hover { background: #2C1A0E; }
+    .feat-icon {
+      width: 44px; height: 44px;
+      background: rgba(200,75,31,0.15); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; margin-bottom: 1.25rem;
+    }
+    .feat-card h3 {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 1rem; color: var(--sand); margin-bottom: 0.5rem;
+    }
+    .feat-card p { font-size: 0.85rem; color: rgba(245,230,200,0.55); line-height: 1.6; }
+
+    /* ─── HOW IT WORKS ─── */
+    .how {
+      padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 5vw, 4rem);
+      max-width: 1200px; margin: 0 auto; text-align: center;
+    }
+    .how h2 { color: var(--earth); margin-bottom: 0.75rem; }
+    .how > p { color: var(--muted); max-width: 500px; margin: 0 auto 3.5rem; }
+    .how-tabs {
+      display: flex; justify-content: center; gap: 0.5rem;
+      margin-bottom: 3rem; background: var(--sand);
+      border-radius: 12px; padding: 0.35rem; width: fit-content;
+      margin-left: auto; margin-right: auto;
+    }
+    .how-tab {
+      padding: 0.6rem 1.5rem; border-radius: 8px; border: none;
+      background: none; font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem; font-weight: 500; cursor: pointer;
+      color: var(--muted); transition: all .2s;
+    }
+    .how-tab.active {
+      background: white; color: var(--earth);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .how-steps { display: none; }
+    .how-steps.active { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+    .step { text-align: left; }
+    .step-num {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      color: white; display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .step h3 {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 1rem; color: var(--earth); margin-bottom: 0.4rem;
+    }
+    .step p { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+
+    /* ─── PRICING ─── */
+    .pricing-section {
+      background: var(--sand);
+      padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 5vw, 4rem);
+    }
+    .pricing-inner { max-width: 900px; margin: 0 auto; text-align: center; }
+    .pricing-inner h2 { color: var(--earth); margin-bottom: 0.5rem; }
+    .pricing-inner > p { color: var(--muted); margin-bottom: 3rem; }
+    .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; text-align: left; }
+    .pricing-card {
+      background: white; border-radius: 20px; padding: 2.25rem;
+      border: 1.5px solid var(--border); position: relative;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .pricing-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(44,26,14,0.1); }
+    .pricing-card.featured { border-color: var(--rust); }
+    .featured-chip {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      color: white; font-size: 0.72rem; font-weight: 600;
+      padding: 0.3rem 1rem; border-radius: 100px; white-space: nowrap;
+    }
+    .price-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; font-weight: 500; }
+    .price-name {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.4rem; color: var(--earth); margin-bottom: 0.75rem;
+    }
+    .price-amount {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 2.5rem; color: var(--rust); line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+    .price-amount span { font-size: 1rem; color: var(--muted); font-weight: 400; }
+    .price-desc { font-size: 0.82rem; color: var(--muted); margin-bottom: 1.75rem; }
+    .price-features { list-style: none; margin-bottom: 2rem; }
+    .price-features li {
+      padding: 0.45rem 0; font-size: 0.875rem; color: var(--mid);
+      border-bottom: 1px solid rgba(200,75,31,0.07);
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .price-features li::before {
+      content: '✓'; color: var(--rust); font-weight: 700; font-size: 0.85rem;
+    }
+    .price-cta {
+      width: 100%; padding: 0.85rem; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+      font-weight: 500; cursor: pointer; text-decoration: none;
+      display: block; text-align: center; transition: opacity .2s, transform .15s;
+    }
+    .price-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+    .cta-free { background: var(--green); color: white; border: none; }
+    .cta-paid { background: linear-gradient(135deg, var(--rust), var(--amber)); color: white; border: none; }
+    .paypal-note {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.5rem; font-size: 0.78rem; color: var(--muted);
+      margin-top: 1rem;
+    }
+    .paypal-note img { height: 18px; opacity: 0.6; }
+
+    /* ─── COUNTRIES ─── */
+    .countries {
+      padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 5vw, 4rem);
+      text-align: center; max-width: 1000px; margin: 0 auto;
+    }
+    .countries p { font-size: 0.82rem; color: var(--muted); margin-bottom: 1.5rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+    .flag-row { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+    .flag-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--mid); }
+    .flag-item span { font-size: 1.4rem; }
+
+    /* ─── CTA BAND ─── */
+    .cta-band {
+      background: linear-gradient(135deg, var(--rust) 0%, #E8541F 50%, var(--amber) 100%);
+      padding: clamp(3rem, 7vw, 5rem) clamp(1rem, 5vw, 4rem);
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .cta-band::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E") repeat;
+      pointer-events: none;
+    }
+    .cta-band h2 {
+      color: white; font-size: clamp(1.8rem, 4vw, 2.5rem);
+      margin-bottom: 0.75rem; position: relative;
+    }
+    .cta-band p { color: rgba(255,255,255,0.8); margin-bottom: 2rem; position: relative; }
+    .cta-band-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; }
+    .btn-white {
+      background: white; color: var(--rust); border: none;
+      padding: 0.85rem 2rem; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+      font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+    .btn-outline-white {
+      background: none; color: white;
+      border: 1.5px solid rgba(255,255,255,0.6);
+      padding: 0.85rem 2rem; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+      font-weight: 500; cursor: pointer; text-decoration: none;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-outline-white:hover { background: rgba(255,255,255,0.1); border-color: white; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--dark); padding: clamp(2.5rem, 6vw, 4rem) clamp(1rem, 5vw, 4rem) 2rem;
+    }
+    .footer-inner { max-width: 1200px; margin: 0 auto; }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 2.5rem; }
+    .footer-brand p { color: rgba(245,230,200,0.5); font-size: 0.85rem; line-height: 1.7; margin-top: 0.75rem; max-width: 280px; }
+    .footer-col h4 {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      color: var(--sand); font-size: 0.85rem; margin-bottom: 1rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .footer-col ul { list-style: none; }
+    .footer-col li { margin-bottom: 0.5rem; }
+    .footer-col a { color: rgba(245,230,200,0.5); text-decoration: none; font-size: 0.85rem; transition: color .2s; }
+    .footer-col a:hover { color: var(--amber); }
+    .footer-bottom {
+      border-top: 1px solid rgba(200,75,31,0.15); padding-top: 1.5rem;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: gap;
+    }
+    .footer-bottom p { font-size: 0.78rem; color: rgba(245,230,200,0.35); }
+
+    /* ─── ANIMATIONS ─── */
+    .fade-up {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; gap: 3rem; }
+      .hero-visual { order: -1; }
+      .features-header { grid-template-columns: 1fr; gap: 1rem; }
+      .feat-grid { grid-template-columns: 1fr 1fr; }
+      .how-steps.active { grid-template-columns: 1fr; gap: 1.5rem; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .nav-cta .btn-ghost { display: none; }
+      .hamburger { display: block; padding: 0.5rem; }
+      .feat-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .hero-btns { flex-direction: column; }
+      .hero-btns a, .hero-btns button { width: 100%; text-align: center; justify-content: center; }
+    }
+    .mobile-menu {
+      display: none; background: var(--light);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem clamp(1rem, 5vw, 4rem);
+    }
+    .mobile-menu.open { display: block; }
+    .mobile-menu a {
+      display: block; padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      text-decoration: none; color: var(--earth); font-size: 0.95rem;
+    }
+    .mobile-menu .mob-btns { display: flex; gap: 0.75rem; margin-top: 1rem; }
+    .mobile-menu .mob-btns a { border: none; padding: 0; flex: 1; text-align: center; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">🚛</div>
+      <div class="logo-text">
+        <strong>LoadX</strong>
+        <span>Africa</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-cta">
+      <a href="auth.html?mode=login" class="btn-ghost">Sign In</a>
+      <a href="auth.html?mode=register" class="btn-primary">Get Started</a>
+    </div>
+    <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <path d="M3 6h16M3 11h16M3 16h16" stroke="#2C1A0E" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#features" onclick="toggleMenu()">Features</a>
+  <a href="#how-it-works" onclick="toggleMenu()">How It Works</a>
+  <a href="#pricing" onclick="toggleMenu()">Pricing</a>
+  <div class="mob-btns">
+    <a href="auth.html?mode=login" class="btn-ghost btn-lg">Sign In</a>
+    <a href="auth.html?mode=register" class="btn-primary btn-lg">Get Started</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<section style="background: var(--light);">
+  <div class="hero">
+    <div class="hero-content fade-up">
+      <div class="hero-badge">🌍 Serving Botswana, SA, Namibia & more</div>
+      <h1>Africa's<br/><em>Freight Matching</em><br/>Platform</h1>
+      <p>Connect freight jobs with trusted trucking companies across Southern Africa. Post loads for free. Carriers subscribe to apply.</p>
+      <div class="hero-btns">
+        <a href="auth.html?mode=register&type=shipping" class="btn-shipper btn-lg">
+          📦 I need freight moved
+        </a>
+        <a href="auth.html?mode=register&type=trucking" class="btn-trucker btn-lg">
+          🚛 I carry loads
+        </a>
+      </div>
+      <div class="trust-strip">
+        <div class="trust-item"><span>✓</span> Free for shippers</div>
+        <div class="trust-item"><span>✓</span> Verified carriers</div>
+        <div class="trust-item"><span>✓</span> Botswana-based</div>
+      </div>
+    </div>
+
+    <div class="hero-visual fade-up" style="animation-delay:.15s">
+      <div class="map-card">
+        <div style="font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.08em; margin-bottom:0.75rem;">Latest Available Load</div>
+        <div class="job-pill">
+          <div>
+            <div style="font-size:0.85rem; font-weight:600;">Gaborone → Johannesburg</div>
+            <div style="font-size:0.72rem; opacity:0.8; margin-top:2px;">General Cargo · 5,000 kg</div>
+          </div>
+          <div class="tag">BWP 8,500</div>
+        </div>
+        <div class="route-line">
+          <svg viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="40" r="8" fill="#C84B1F"/>
+            <circle cx="30" cy="40" r="4" fill="white"/>
+            <path d="M38 40 C100 10, 220 70, 290 40" stroke="url(#routeGrad)" stroke-width="2.5" stroke-dasharray="6 4"/>
+            <circle cx="290" cy="40" r="8" fill="#2D6A4F"/>
+            <circle cx="290" cy="40" r="4" fill="white"/>
+            <text x="20" y="62" font-size="10" fill="#8A6A50" font-family="DM Sans">Gaborone</text>
+            <text x="255" y="62" font-size="10" fill="#8A6A50" font-family="DM Sans">Johannesburg</text>
+            <circle cx="162" cy="32" r="10" fill="#E87C2A"/>
+            <text x="157" y="36" font-size="10" fill="white" font-family="DM Sans">🚛</text>
+            <defs>
+              <linearGradient id="routeGrad" x1="38" y1="40" x2="290" y2="40">
+                <stop offset="0%" stop-color="#C84B1F"/>
+                <stop offset="100%" stop-color="#2D6A4F"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="job-meta">
+          <span>📅 Pickup: Dec 20</span>
+          <span>⚖️ 5,000 kg</span>
+          <span>🏭 Mining</span>
+        </div>
+        <div class="stat-row">
+          <div class="stat-badge" style="flex:1">
+            <strong>142</strong>
+            <span>Active Jobs</span>
+          </div>
+          <div class="stat-badge" style="flex:1">
+            <strong>89</strong>
+            <span>Carriers</span>
+          </div>
+          <div class="stat-badge" style="flex:1">
+            <strong>5</strong>
+            <span>Countries</span>
+          </div>
+        </div>
+
+        <div class="float-chip chip-new">
+          <span style="color:var(--green)">●</span> New job posted
+        </div>
+        <div class="float-chip chip-match">
+          ⚡ 3 carriers matched
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COUNTRIES -->
+<div class="countries fade-up">
+  <p>Operating across Southern Africa</p>
+  <div class="flag-row">
+    <div class="flag-item"><span>🇧🇼</span> Botswana</div>
+    <div class="flag-item"><span>🇿🇦</span> South Africa</div>
+    <div class="flag-item"><span>🇳🇦</span> Namibia</div>
+    <div class="flag-item"><span>🇿🇼</span> Zimbabwe</div>
+    <div class="flag-item"><span>🇿🇲</span> Zambia</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-inner">
+    <p class="section-label">Platform Features</p>
+    <div class="features-header fade-up">
+      <h2>Built for African<br/>freight operations</h2>
+      <p>Everything you need to post loads and find trusted carriers — without the complexity of enterprise logistics software.</p>
+    </div>
+    <div class="feat-grid fade-up">
+      <div class="feat-card">
+        <div class="feat-icon">📋</div>
+        <h3>Post Loads Free</h3>
+        <p>Shippers post unlimited freight jobs at zero cost. Set your cargo details, route, and price.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <h3>Browse & Apply</h3>
+        <p>Subscribed trucking companies browse all available loads and apply for the ones that match their fleet.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🛡️</div>
+        <h3>Verified Carriers</h3>
+        <p>Trucking companies submit business registration and fleet details for verification before applying.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌍</div>
+        <h3>Cross-Border Routes</h3>
+        <p>Support for BWA, ZAF, NAM, ZWE, ZMB country pairs. Post and find loads crossing borders.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📦</div>
+        <h3>All Cargo Types</h3>
+        <p>General, refrigerated, hazardous, bulk, and containers — all cargo categories supported.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💳</div>
+        <h3>PayPal Subscriptions</h3>
+        <p>Carriers subscribe monthly via PayPal to unlock job applications. Simple, familiar checkout.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works" style="padding: clamp(3rem, 8vw, 6rem) 0;">
+  <div class="how fade-up">
+    <p class="section-label">How It Works</p>
+    <h2>Simple for everyone</h2>
+    <p>Whether you're moving cargo or hauling it, getting started takes minutes.</p>
+
+    <div class="how-tabs">
+      <button class="how-tab active" onclick="switchTab('shipper')">📦 I'm a Shipper</button>
+      <button class="how-tab" onclick="switchTab('trucker')">🚛 I'm a Trucker</button>
+    </div>
+
+    <div class="how-steps active" id="shipper-steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Create a free account</h3>
+        <p>Register as a Shipping Entity. No payment required — it's completely free for those posting loads.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Post your freight job</h3>
+        <p>Fill in cargo details — type, weight, pickup location, delivery destination, date, and your price.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Review applicants</h3>
+        <p>Subscribed carriers apply to your job. Review their profiles and accept the best match for your shipment.</p>
+      </div>
+    </div>
+
+    <div class="how-steps" id="trucker-steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Register your company</h3>
+        <p>Sign up as a Trucking Company. Provide your fleet size, cargo capabilities, and business registration.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Subscribe via PayPal</h3>
+        <p>Pay a monthly subscription via PayPal to unlock access to all available freight jobs on the platform.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Apply for loads</h3>
+        <p>Browse available jobs, filter by cargo type, route or industry, and apply to the ones that fit your fleet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="pricing-inner fade-up">
+    <p class="section-label">Pricing</p>
+    <h2>Simple, honest pricing</h2>
+    <p>Shippers post for free. Trucking companies subscribe to apply for loads.</p>
+    <div class="pricing-grid">
+      <!-- Shipper -->
+      <div class="pricing-card">
+        <div class="price-label">For Shipping Entities</div>
+        <div class="price-name">Shipper</div>
+        <div class="price-amount">FREE</div>
+        <div class="price-desc">Post unlimited freight jobs</div>
+        <ul class="price-features">
+          <li>Unlimited job posting</li>
+          <li>View carrier applications</li>
+          <li>Company profile dashboard</li>
+          <li>Botswana, SA, Namibia routes</li>
+          <li>All cargo types supported</li>
+        </ul>
+        <a href="auth.html?mode=register&type=shipping" class="price-cta cta-free">Start Shipping Free</a>
+      </div>
+      <!-- Trucker -->
+      <div class="pricing-card featured">
+        <div class="featured-chip">For Trucking Companies</div>
+        <div class="price-label">For Trucking Companies</div>
+        <div class="price-name">Carrier</div>
+        <div class="price-amount">BWP 500<span>/mo</span></div>
+        <div class="price-desc">Full access to all freight jobs</div>
+        <ul class="price-features">
+          <li>Browse all available loads</li>
+          <li>Apply to unlimited jobs</li>
+          <li>Filter by route, cargo type</li>
+          <li>Company profile &amp; verification</li>
+          <li>Job history dashboard</li>
+        </ul>
+        <a href="auth.html?mode=register&type=trucking" class="price-cta cta-paid">Start 7-Day Free Trial</a>
+        <div class="paypal-note">
+          💳 Subscription powered by PayPal
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<section class="cta-band">
+  <h2>Ready to move cargo across Africa?</h2>
+  <p>Join hundreds of shippers and carriers already connecting on LoadX Africa.</p>
+  <div class="cta-band-btns">
+    <a href="auth.html?mode=register&type=shipping" class="btn-white">Post a Load — It's Free</a>
+    <a href="auth.html?mode=register&type=trucking" class="btn-outline-white">I'm a Carrier</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">🚛</div>
+          <div class="logo-text">
+            <strong style="color:var(--sand)">LoadX</strong>
+            <span>Africa</span>
+          </div>
+        </a>
+        <p>Africa's freight matching platform. Connecting shippers and trusted carriers across Southern Africa.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="auth.html?mode=register">Sign Up</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Terms &amp; Conditions</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Support</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 LoadX Africa. All rights reserved. | Gaborone, Botswana</p>
+      <p style="font-size:.75rem; color:rgba(245,230,200,0.25)">🇧🇼 Made in Botswana</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+}
+
+function switchTab(type) {
+  document.querySelectorAll('.how-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && type === 'shipper') || (i === 1 && type === 'trucker'));
+  });
+  document.getElementById('shipper-steps').classList.toggle('active', type === 'shipper');
+  document.getElementById('trucker-steps').classList.toggle('active', type === 'trucker');
+}
+
+// Fade-up on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LoadX Africa — Sign In / Register</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --rust: #C84B1F; --amber: #E87C2A;
+      --sand: #F5E6C8; --earth: #2C1A0E; --dark: #1A0F06;
+      --mid: #4A2F1A; --muted: #8A6A50; --light: #FAF5EE;
+      --green: #2D6A4F; --border: rgba(200,75,31,0.15);
+      --error: #D9534F;
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--light); color: var(--earth);
+      min-height: 100vh;
+    }
+
+    /* Layout */
+    .page {
+      display: grid; grid-template-columns: 1fr 1.1fr;
+      min-height: 100vh;
+    }
+    .left-panel {
+      background: linear-gradient(160deg, var(--dark) 0%, #2C1A0E 60%, #3D2010 100%);
+      padding: 3rem; display: flex; flex-direction: column;
+      justify-content: space-between; position: relative; overflow: hidden;
+    }
+    .left-panel::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Ccircle cx='40' cy='40' r='30' stroke='rgba(200,75,31,0.08)' stroke-width='1'/%3E%3Ccircle cx='40' cy='40' r='15' stroke='rgba(200,75,31,0.05)' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E") repeat;
+      pointer-events: none;
+    }
+    .panel-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; position: relative;
+    }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 1.2rem;
+    }
+    .logo-text strong { display: block; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--sand); }
+    .logo-text span { font-size: 0.6rem; font-weight: 600; color: var(--amber); letter-spacing: 0.12em; text-transform: uppercase; }
+
+    .panel-body { position: relative; }
+    .panel-body h2 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); color: var(--sand);
+      line-height: 1.2; margin-bottom: 1rem;
+    }
+    .panel-body p { color: rgba(245,230,200,0.6); font-size: 0.9rem; line-height: 1.7; max-width: 340px; }
+
+    .route-cards { margin-top: 2rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .route-card {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(200,75,31,0.2);
+      border-radius: 12px; padding: 1rem 1.25rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .route-card .from-to { font-size: 0.82rem; color: var(--sand); font-weight: 500; }
+    .route-card .price { color: var(--amber); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; }
+    .route-card .cargo-tag { font-size: 0.7rem; color: rgba(245,230,200,0.45); margin-top: 2px; }
+
+    .panel-footer p { font-size: 0.75rem; color: rgba(245,230,200,0.25); position: relative; }
+
+    /* Right panel - form */
+    .right-panel {
+      padding: 2.5rem clamp(1.5rem, 6vw, 4rem);
+      display: flex; flex-direction: column;
+      justify-content: center; overflow-y: auto;
+    }
+    .back-link {
+      text-decoration: none; color: var(--muted); font-size: 0.82rem;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      margin-bottom: 2rem; transition: color .2s;
+    }
+    .back-link:hover { color: var(--rust); }
+
+    /* Mode switcher (Login / Register) */
+    .mode-tabs {
+      display: flex; background: var(--sand); border-radius: 10px;
+      padding: 4px; margin-bottom: 2rem; width: fit-content;
+    }
+    .mode-tab {
+      padding: 0.55rem 1.5rem; border-radius: 7px; border: none;
+      background: none; font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem; font-weight: 500; cursor: pointer;
+      color: var(--muted); transition: all .2s;
+    }
+    .mode-tab.active { background: white; color: var(--earth); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+
+    .form-title {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.6rem; color: var(--earth); margin-bottom: 0.35rem;
+    }
+    .form-subtitle { font-size: 0.875rem; color: var(--muted); margin-bottom: 2rem; }
+
+    /* User type tabs (register only) */
+    .type-tabs {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.75rem; margin-bottom: 1.75rem;
+    }
+    .type-tab {
+      border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 0.9rem 1rem; cursor: pointer; background: white;
+      transition: border-color .2s, background .2s; text-align: center;
+    }
+    .type-tab:hover { border-color: var(--rust); }
+    .type-tab.active { border-color: var(--rust); background: rgba(200,75,31,0.04); }
+    .type-tab .type-icon { font-size: 1.4rem; display: block; margin-bottom: 0.35rem; }
+    .type-tab .type-name { font-weight: 600; font-size: 0.875rem; color: var(--earth); }
+    .type-tab .type-desc { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    /* Form fields */
+    .field-group { margin-bottom: 1.1rem; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--mid); margin-bottom: 0.35rem; }
+    input, select, textarea {
+      width: 100%; padding: 0.7rem 0.9rem;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+      color: var(--earth); background: white;
+      transition: border-color .2s, box-shadow .2s;
+      appearance: none; outline: none;
+    }
+    input[type="checkbox"], input[type="radio"] {
+      appearance: auto; width: auto; padding: 0;
+      border: none; border-radius: 0; background: none; box-shadow: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--rust);
+      box-shadow: 0 0 0 3px rgba(200,75,31,0.1);
+    }
+    input::placeholder { color: rgba(138,106,80,0.5); }
+    select { cursor: pointer; }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* Cargo types checkboxes */
+    .cargo-types { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
+    .cargo-check {
+      display: flex; align-items: center; gap: 0.4rem;
+      background: white; border: 1.5px solid var(--border);
+      border-radius: 6px; padding: 0.35rem 0.7rem;
+      cursor: pointer; transition: border-color .2s;
+      font-size: 0.78rem; color: var(--mid);
+    }
+    .cargo-check:has(input:checked) { border-color: var(--rust); background: rgba(200,75,31,0.05); color: var(--rust); }
+    .cargo-check input { width: auto; margin: 0; cursor: pointer; }
+
+    .field-error { color: var(--error); font-size: 0.75rem; margin-top: 0.3rem; display: none; }
+    .field-error.show { display: block; }
+
+    /* Submit */
+    .submit-btn {
+      width: 100%; padding: 0.9rem;
+      background: linear-gradient(135deg, var(--rust), var(--amber));
+      color: white; border: none; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+      font-weight: 600; cursor: pointer; margin-top: 0.75rem;
+      transition: opacity .2s, transform .15s;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .submit-btn.loading::after {
+      content: ''; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: white;
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .divider {
+      display: flex; align-items: center; gap: 1rem;
+      margin: 1.25rem 0; font-size: 0.78rem; color: var(--muted);
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .switch-mode { font-size: 0.82rem; color: var(--muted); margin-top: 1rem; text-align: center; }
+    .switch-mode a { color: var(--rust); text-decoration: none; font-weight: 500; }
+    .switch-mode a:hover { text-decoration: underline; }
+
+    .global-error {
+      background: rgba(217,83,79,0.08); border: 1px solid rgba(217,83,79,0.3);
+      border-radius: 8px; padding: 0.75rem 1rem;
+      font-size: 0.82rem; color: var(--error); margin-bottom: 1rem; display: none;
+    }
+    .global-error.show { display: block; }
+
+    .global-success {
+      background: rgba(45,106,79,0.08); border: 1px solid rgba(45,106,79,0.3);
+      border-radius: 8px; padding: 0.75rem 1rem;
+      font-size: 0.82rem; color: var(--green); margin-bottom: 1rem; display: none;
+    }
+    .global-success.show { display: block; }
+
+    /* Section visibility */
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+
+    @media (max-width: 768px) {
+      .page { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 2rem 1.25rem; justify-content: flex-start; padding-top: 3rem; }
+      .field-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <a href="index.html" class="panel-logo">
+      <div class="logo-icon">🚛</div>
+      <div class="logo-text">
+        <strong>LoadX</strong>
+        <span>Africa</span>
+      </div>
+    </a>
+
+    <div class="panel-body">
+      <h2>Africa's freight<br/>marketplace</h2>
+      <p>Post loads for free. Find trusted carriers. Move cargo across Southern Africa.</p>
+      <div class="route-cards">
+        <div class="route-card">
+          <div>
+            <div class="from-to">📍 Gaborone → Johannesburg</div>
+            <div class="cargo-tag">General · 5,000 kg · Mining</div>
+          </div>
+          <div class="price">BWP 8,500</div>
+        </div>
+        <div class="route-card">
+          <div>
+            <div class="from-to">📍 Windhoek → Cape Town</div>
+            <div class="cargo-tag">Refrigerated · 2,200 kg · Agriculture</div>
+          </div>
+          <div class="price">ZAR 12,000</div>
+        </div>
+        <div class="route-card">
+          <div>
+            <div class="from-to">📍 Harare → Lusaka</div>
+            <div class="cargo-tag">Bulk · 18,000 kg · Construction</div>
+          </div>
+          <div class="price">USD 2,400</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-footer">
+      <p>🔒 Secure authentication powered by Firebase</p>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <a href="index.html" class="back-link">← Back to home</a>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="setMode('login')" id="tab-login">Sign In</button>
+      <button class="mode-tab" onclick="setMode('register')" id="tab-register">Create Account</button>
+    </div>
+
+    <!-- Global messages -->
+    <div class="global-error" id="globalError"></div>
+    <div class="global-success" id="globalSuccess"></div>
+
+    <!-- ─── LOGIN SECTION ─── -->
+    <div class="form-section active" id="loginSection">
+      <div class="form-title">Welcome back</div>
+      <div class="form-subtitle">Sign in to your LoadX Africa account</div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="field-group">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" placeholder="you@company.com" required />
+          <div class="field-error" id="loginEmailErr"></div>
+        </div>
+        <div class="field-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="Your password" required />
+          <div class="field-error" id="loginPasswordErr"></div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="loginBtn">Sign In</button>
+
+        <div class="switch-mode">
+          <a href="#" onclick="forgotPassword(event)" style="font-size:.8rem; display:block; margin-bottom:.5rem;">Forgot your password?</a>
+          Don't have an account? <a href="#" onclick="setMode('register')">Create one</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- ─── REGISTER SECTION ─── -->
+    <div class="form-section" id="registerSection">
+      <div class="form-title">Get started</div>
+      <div class="form-subtitle">Create your LoadX Africa account</div>
+
+      <!-- User type selector -->
+      <div class="type-tabs">
+        <div class="type-tab active" onclick="setType('shipping')" id="typeShipping">
+          <span class="type-icon">📦</span>
+          <div class="type-name">Shipping Entity</div>
+          <div class="type-desc">I need cargo moved</div>
+        </div>
+        <div class="type-tab" onclick="setType('trucking')" id="typeTrucking">
+          <span class="type-icon">🚛</span>
+          <div class="type-name">Trucking Company</div>
+          <div class="type-desc">I carry loads</div>
+        </div>
+      </div>
+
+      <form id="registerForm" onsubmit="handleRegister(event)">
+        <!-- Common fields -->
+        <div class="field-row">
+          <div class="field-group">
+            <label>Contact Person Name *</label>
+            <input type="text" id="regName" placeholder="Full name" required />
+          </div>
+          <div class="field-group">
+            <label>Company Name *</label>
+            <input type="text" id="regCompany" placeholder="Company or trade name" required />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Email Address *</label>
+            <input type="email" id="regEmail" placeholder="work@company.com" required />
+          </div>
+          <div class="field-group">
+            <label>Phone Number *</label>
+            <input type="tel" id="regPhone" placeholder="+267 7X XXX XXX" required />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Password *</label>
+            <input type="password" id="regPassword" placeholder="Min 8 characters" required minlength="8" />
+          </div>
+          <div class="field-group">
+            <label>Country *</label>
+            <select id="regCountry" required>
+              <option value="BWA">🇧🇼 Botswana</option>
+              <option value="ZAF">🇿🇦 South Africa</option>
+              <option value="NAM">🇳🇦 Namibia</option>
+              <option value="ZWE">🇿🇼 Zimbabwe</option>
+              <option value="ZMB">🇿🇲 Zambia</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Physical Address *</label>
+          <input type="text" id="regAddress" placeholder="Street, City" required />
+        </div>
+        <div class="field-group">
+          <label>Business Registration Number <span style="color:var(--muted);font-weight:400">(optional for shippers)</span></label>
+          <input type="text" id="regBizReg" placeholder="e.g. BW12345678" />
+        </div>
+
+        <!-- Trucking-only fields -->
+        <div id="truckingFields" style="display:none">
+          <div class="field-row">
+            <div class="field-group">
+              <label>Fleet Size *</label>
+              <input type="number" id="regFleet" placeholder="Number of trucks" min="1" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Cargo Types You Handle *</label>
+            <div class="cargo-types">
+              <label class="cargo-check"><input type="checkbox" value="general" onchange="updateCargo()"> General</label>
+              <label class="cargo-check"><input type="checkbox" value="refrigerated" onchange="updateCargo()"> Refrigerated</label>
+              <label class="cargo-check"><input type="checkbox" value="hazardous" onchange="updateCargo()"> Hazardous</label>
+              <label class="cargo-check"><input type="checkbox" value="bulk" onchange="updateCargo()"> Bulk</label>
+              <label class="cargo-check"><input type="checkbox" value="containers" onchange="updateCargo()"> Containers</label>
+            </div>
+            <div class="field-error" id="cargoErr"></div>
+          </div>
+        </div>
+
+        <div class="field-group" style="margin-top:.5rem">
+          <label style="display:flex; align-items:center; gap:.5rem; cursor:pointer; font-size:.8rem; font-weight:400">
+            <input type="checkbox" id="regTerms" required style="width:auto; margin:0" />
+            I agree to the <a href="#" style="color:var(--rust)">Terms &amp; Conditions</a>
+          </label>
+        </div>
+
+        <button type="submit" class="submit-btn" id="registerBtn">Create Account</button>
+
+        <div class="switch-mode">
+          Already have an account? <a href="#" onclick="setMode('login')">Sign in</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    sendPasswordResetEmail, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // ─────────────────────────────────────────────
+  // 🔧 REPLACE WITH YOUR FIREBASE CONFIG
+  // ─────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyAaWtWCv6vs7o9X1uoDpLO67-qE26oO6PY",
+    authDomain: "loadx-e407e.firebaseapp.com",
+    projectId: "loadx-e407e",
+    storageBucket: "loadx-e407e.firebasestorage.app",
+    messagingSenderId: "178795587005",
+    appId: "1:178795587005:web:ee8818d2fb44f216759ed4",
+    measurementId: "G-ZDE4527SJY"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Check auth state — redirect logged-in users to dashboard
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        const role = snap.data().role;
+        window.location.href = role === 'trucking_company' ? 'trucker/index.html' : 'shipper/index.html';
+      }
+    }
+  });
+
+  // ── LOGIN ──
+  window.handleLogin = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    clearMessages();
+    btn.classList.add('loading'); btn.disabled = true;
+
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const snap = await getDoc(doc(db, "users", cred.user.uid));
+      const role = snap.data()?.role;
+      showSuccess('Signing you in…');
+      setTimeout(() => {
+        window.location.href = role === 'trucking_company' ? 'trucker/index.html' : 'shipper/index.html';
+      }, 800);
+    } catch (err) {
+      showError(friendlyError(err.code));
+      btn.classList.remove('loading'); btn.disabled = false;
+    }
+  };
+
+  // ── REGISTER ──
+  window.handleRegister = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('registerBtn');
+    const userType = window._userType || 'shipping';
+
+    clearMessages();
+
+    // Validate cargo types for trucking
+    if (userType === 'trucking') {
+      const checked = [...document.querySelectorAll('.cargo-check input:checked')].map(i => i.value);
+      if (checked.length === 0) {
+        document.getElementById('cargoErr').textContent = 'Select at least one cargo type';
+        document.getElementById('cargoErr').classList.add('show');
+        return;
+      }
+    }
+
+    btn.classList.add('loading'); btn.disabled = true;
+
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const userData = {
+      role: userType === 'trucking' ? 'trucking_company' : 'shipping_entity',
+      contactPersonName: document.getElementById('regName').value.trim(),
+      companyName: document.getElementById('regCompany').value.trim(),
+      phoneNumber: document.getElementById('regPhone').value.trim(),
+      physicalAddress: document.getElementById('regAddress').value.trim(),
+      country: document.getElementById('regCountry').value,
+      businessRegistrationNumber: document.getElementById('regBizReg').value.trim() || null,
+      subscriptionStatus: userType === 'trucking' ? 'trial' : 'active',
+      trialEndsAt: userType === 'trucking' ? new Date(Date.now() + 7*24*60*60*1000) : null,
+      createdAt: serverTimestamp(),
+      ...(userType === 'trucking' && {
+        fleetSize: parseInt(document.getElementById('regFleet').value) || 0,
+        cargoTypes: [...document.querySelectorAll('.cargo-check input:checked')].map(i => i.value),
+      })
+    };
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "users", cred.user.uid), { ...userData, email });
+      showSuccess('Account created! Redirecting to your dashboard…');
+      setTimeout(() => {
+        window.location.href = userType === 'trucking' ? 'trucker/index.html' : 'shipper/index.html';
+      }, 1200);
+    } catch (err) {
+      showError(friendlyError(err.code));
+      btn.classList.remove('loading'); btn.disabled = false;
+    }
+  };
+
+  // ── FORGOT PASSWORD ──
+  window.forgotPassword = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    if (!email) { showError('Enter your email address first, then click Forgot Password.'); return; }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showSuccess(`Password reset email sent to ${email}. Check your inbox.`);
+    } catch (err) {
+      showError(friendlyError(err.code));
+    }
+  };
+
+  function friendlyError(code) {
+    const map = {
+      'auth/user-not-found': 'No account found with that email.',
+      'auth/wrong-password': 'Incorrect password. Please try again.',
+      'auth/email-already-in-use': 'An account with this email already exists.',
+      'auth/weak-password': 'Password is too weak. Use at least 8 characters.',
+      'auth/invalid-email': 'Please enter a valid email address.',
+      'auth/too-many-requests': 'Too many attempts. Please try again later.',
+      'auth/network-request-failed': 'Network error. Check your connection.',
+    };
+    return map[code] || 'Something went wrong. Please try again.';
+  }
+
+  function clearMessages() {
+    document.getElementById('globalError').classList.remove('show');
+    document.getElementById('globalSuccess').classList.remove('show');
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('globalError');
+    el.textContent = '⚠️ ' + msg; el.classList.add('show');
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById('globalSuccess');
+    el.textContent = '✓ ' + msg; el.classList.add('show');
+  }
+</script>
+
+<script>
+  let _userType = 'shipping';
+  window._userType = 'shipping';
+
+  // Read URL params
+  const params = new URLSearchParams(location.search);
+  const mode = params.get('mode') || 'login';
+  const type = params.get('type') || 'shipping';
+
+  if (mode === 'register') setMode('register');
+  if (type) setType(type);
+
+  function setMode(m) {
+    document.getElementById('loginSection').classList.toggle('active', m === 'login');
+    document.getElementById('registerSection').classList.toggle('active', m === 'register');
+    document.getElementById('tab-login').classList.toggle('active', m === 'login');
+    document.getElementById('tab-register').classList.toggle('active', m === 'register');
+    // Reset messages
+    document.getElementById('globalError').classList.remove('show');
+    document.getElementById('globalSuccess').classList.remove('show');
+  }
+
+  function setType(type) {
+    window._userType = type;
+    document.getElementById('typeShipping').classList.toggle('active', type === 'shipping');
+    document.getElementById('typeTrucking').classList.toggle('active', type === 'trucking');
+    document.getElementById('truckingFields').style.display = type === 'trucking' ? 'block' : 'none';
+    // Make trucking fields required
+    const fleetInput = document.getElementById('regFleet');
+    if (fleetInput) fleetInput.required = type === 'trucking';
+  }
+
+  function updateCargo() {
+    document.getElementById('cargoErr').classList.remove('show');
+  }
+</script>
+</body>
+</html>
